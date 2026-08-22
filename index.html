@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi & Penggajian</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            font-size: 22px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            display: none; 
+        }
+        .result p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #2563eb;
+        }
+        hr {
+            border: 0; 
+            border-top: 1px dashed #93c5fd; 
+            margin: 12px 0;
+        }
+        .total-box {
+            background-color: #dbeafe;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .salary-box {
+            background-color: #d1fae5;
+            border: 1px solid #a7f3d0;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Kalkulator Gaji & Lembur</h2>
+        
+        <div class="form-group">
+            <label for="hari">Hari Kerja:</label>
+            <select id="hari">
+                <option value="biasa">Senin - Kamis</option>
+                <option value="jumat">Jumat</option>
+                <option value="sabtu">Sabtu</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="jamMasuk">Jam Masuk:</label>
+            <input type="time" id="jamMasuk" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="jamKeluar">Jam Keluar:</label>
+            <input type="time" id="jamKeluar" required>
+        </div>
+
+        <div class="form-group">
+            <label for="gajiPerJam">Gaji per Jam (Rp):</label>
+            <input type="number" id="gajiPerJam" value="30000" required>
+        </div>
+        
+        <button onclick="hitungJamKerja()">Hitung Gaji</button>
+
+        <div class="result" id="hasil">
+            <p>Jam Kerja Efektif: <span class="highlight" id="jamEfektif">0</span></p>
+            <p>Jam Basic (Normal): <span class="highlight" id="jamNormal">0</span></p>
+            
+            <div class="total-box">
+                <p style="margin:0; color:#1e3a8a;">Lembur (Dikonversi): <span id="lemburKonversi">0</span></p>
+            </div>
+            
+            <hr>
+            
+            <p>Gaji Basic: <span id="uangBasic">Rp 0</span></p>
+            <p>Uang Lembur: <span id="uangLembur">Rp 0</span></p>
+            
+            <div class="salary-box">
+                <p style="margin:0; font-size: 16px;">Total Pendapatan: <span id="totalPendapatan" style="float: right;">Rp 0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi untuk format Rupiah
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+        }
+
+        function hitungJamKerja() {
+            const hari = document.getElementById('hari').value;
+            const inputMasuk = document.getElementById('jamMasuk').value;
+            const inputKeluar = document.getElementById('jamKeluar').value;
+            const gajiPerJam = parseInt(document.getElementById('gajiPerJam').value);
+
+            if (!inputMasuk || !inputKeluar || isNaN(gajiPerJam)) {
+                alert("Mohon lengkapi semua data!");
+                return;
+            }
+
+            const [jM, mM] = inputMasuk.split(':').map(Number);
+            const [jK, mK] = inputKeluar.split(':').map(Number);
+
+            let totalMenitMasuk = (jM * 60) + mM;
+            let totalMenitKeluar = (jK * 60) + mK;
+
+            if (totalMenitKeluar < totalMenitMasuk) {
+                totalMenitKeluar += (24 * 60); 
+            }
+
+            const totalJamDiLokasi = (totalMenitKeluar - totalMenitMasuk) / 60;
+
+            let batasBasic = 7; 
+            let jamIstirahat = 1; 
+
+            if (hari === 'jumat') {
+                jamIstirahat = 2; 
+            } else if (hari === 'sabtu') {
+                batasBasic = 5; 
+            }
+
+            let jamEfektif = totalJamDiLokasi - jamIstirahat;
+            if (jamEfektif < 0) jamEfektif = 0; 
+
+            let jamNormal = 0;
+            let lemburAktual = 0;
+
+            if (jamEfektif > batasBasic) {
+                jamNormal = batasBasic;
+                lemburAktual = jamEfektif - batasBasic;
+            } else {
+                jamNormal = jamEfektif;
+                lemburAktual = 0;
+            }
+
+            let lemburKonversi = 0;
+            if (lemburAktual > 0) {
+                if (lemburAktual <= 1) {
+                    lemburKonversi = lemburAktual * 1.5;
+                } else {
+                    lemburKonversi = (1 * 1.5) + ((lemburAktual - 1) * 2);
+                }
+            }
+
+            // Perhitungan Gaji
+            const uangBasic = jamNormal * gajiPerJam;
+            const uangLembur = lemburKonversi * gajiPerJam;
+            const totalPendapatan = uangBasic + uangLembur;
+
+            // Tampilkan Data Jam
+            document.getElementById('jamEfektif').innerText = jamEfektif.toFixed(2) + " jam";
+            document.getElementById('jamNormal').innerText = jamNormal.toFixed(2) + " jam";
+            document.getElementById('lemburKonversi').innerText = lemburKonversi.toFixed(2) + " jam";
+            
+            // Tampilkan Data Uang
+            document.getElementById('uangBasic').innerText = formatRupiah(uangBasic);
+            document.getElementById('uangLembur').innerText = formatRupiah(uangLembur);
+            document.getElementById('totalPendapatan').innerText = formatRupiah(totalPendapatan);
+            
+            document.getElementById('hasil').style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
